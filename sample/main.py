@@ -1,63 +1,67 @@
 import numpy as np
-import imageio
-from algorithm.degrading_image_tools import DegradationType, DegradingImage
+from data.degrade_images import DegradationType, degrade_image
+from PIL import Image
 import matplotlib.pyplot as plt
 from algorithm.dictionary import Dictionary, DictionaryType
 from algorithm.sparse_solver import SparseSolver
 from algorithm.compute_stat import compute_psnr
+from pathlib import Path
 
-#################
-image_data_path = "./data/sample_image/barbara.png"
 
-config_image_degradation = {
-    "image_degradation_type": DegradationType.add_random_noise,
-    "noise_sigma": 20, "random_seed": 1
+INPUT_FILE = {
+    "file_path": Path("./data/sample_image/image.png")
 }
 
-sparseland_model = {
-    "patch_size": (10, 10),  # The patch must be a square
-    "initial_dict": DictionaryType.dct_dictionary,
-    "dictionary_learning": True,  # False means a predefined dictionary will be used.
-    "num_learning_iterations": 20  # number of learning iterations
+CONFIG = {
+    "image_degradation": {
+        "noise_sigma": 20
+    },
+    "sparse_model": {
+        "patch_size": (10, 10),  # The patch must be a square
+        "initial_dict": DictionaryType.dct_dictionary,
+        "dictionary_learning": True,  # False means a predefined dictionary will be used.
+        "num_learning_iterations": 20  # number of learning iterations
+    }
 }
-sparseland_model["epsilon"] = np.sqrt(1.1) * sparseland_model["patch_size"][0] * config_image_degradation["noise_sigma"]
 
-#################
-
-# Load an image
-img = imageio.imread(image_data_path)
-img = img[:256, 251:251+256]
-
-# Degrading an image
-degrading_image = DegradingImage(sigma=config_image_degradation["noise_sigma"],
-                                 rand_seed=config_image_degradation["random_seed"],
-                                 degradation_type=config_image_degradation["image_degradation_type"])
-degraded_img = degrading_image.degradation(img)
-
-# Get a dictionary
-dictionary = Dictionary(dictionary_type=sparseland_model["initial_dict"])
-dict = dictionary.get_dictionary(sparseland_model["patch_size"])
-
-sparse_solver = SparseSolver(dictionary_learning=sparseland_model["dictionary_learning"],
-                             num_learning_iterations=sparseland_model["num_learning_iterations"])
-reconst_img = sparse_solver(degraded_img, dict, sparseland_model)
+CONFIG["sparse_model"]["epsilon"] = np.sqrt(1.1) * CONFIG["sparse_model"]["patch_size"][0] * CONFIG["image_degradation"]["noise_sigma"]
 
 
-# data visualization
-plt.figure(figsize=(14, 4))
-plt.subplot(131)
-plt.imshow(img, "gray")
-plt.axis("off")
-plt.title("Original")
+def run_scripts(input_file: dict, config:dict):
+    # Load an image
+    img = np.array(Image.open(input_file["file_path"]))
+    img = img[:256, 251:251+256]  # TODO: Remove it because it exists only for test purposes.
 
-plt.subplot(132)
-plt.imshow(degraded_img, "gray")
-plt.axis("off")
-plt.title("degraded img. PSNR={:.3f}".format(compute_psnr(img, degraded_img)))
+    # Degrading an image
+    degraded_img = degrade_image(img, config["image_degradation"])
 
-plt.subplot(133)
-plt.imshow(reconst_img, "gray")
-plt.axis("off")
-plt.title("reconstrucred img. PSNR={:.3f}".format(compute_psnr(img, reconst_img)))
+    # Get a dictionary
+    dictionary = Dictionary(dictionary_type=config["sparse_model"]["initial_dict"])
+    dict = dictionary.get_dictionary(config["sparse_model"]["patch_size"])
 
-plt.show()
+    sparse_solver = SparseSolver(dictionary_learning=config["sparse_model"]["dictionary_learning"],
+                                 num_learning_iterations=config["sparse_model"]["num_learning_iterations"])
+    reconst_img = sparse_solver(degraded_img, dict, config["sparse_model"])
+
+    # data visualization
+    plt.figure(figsize=(14, 4))
+    plt.subplot(131)
+    plt.imshow(img, "gray")
+    plt.axis("off")
+    plt.title("Original")
+
+    plt.subplot(132)
+    plt.imshow(degraded_img, "gray")
+    plt.axis("off")
+    plt.title("degraded img. PSNR={:.3f}".format(compute_psnr(img, degraded_img)))
+
+    plt.subplot(133)
+    plt.imshow(reconst_img, "gray")
+    plt.axis("off")
+    plt.title("reconstrucred img. PSNR={:.3f}".format(compute_psnr(img, reconst_img)))
+
+    plt.show()
+
+
+if __name__ == "__main__":
+    run_scripts(input_file=INPUT_FILE, config=CONFIG)

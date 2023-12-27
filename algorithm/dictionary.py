@@ -2,19 +2,20 @@ import numpy as np
 from enum import Enum
 
 
-# TODO: add different dictionaries
 class DictionaryType(Enum):
-    dct_dictionary = 0
+    DCT = "dct"
+    # TODO: add different dictionaries
+
 
 class Dictionary:
-    def __init__(self, dictionary_type=DictionaryType.dct_dictionary):
+    def __init__(self, dictionary_type=DictionaryType.DCT):
         self.dictionary_type = dictionary_type
 
     def get_dictionary(self, patch_size):
         if patch_size[0] != patch_size[1]:
             raise ValueError('A patch should be square.')
 
-        if self.dictionary_type == DictionaryType.dct_dictionary:
+        if self.dictionary_type == DictionaryType.DCT:
             patch_n = patch_size[0]  # patch size
 
             dct = np.zeros(patch_size)
