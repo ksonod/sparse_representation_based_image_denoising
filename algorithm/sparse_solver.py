@@ -2,41 +2,56 @@ import numpy as np
 import numpy.matlib
 from skimage.util import view_as_windows
 from algorithm import compute_stat
+from algorithm.dictionary import Dictionary
 
 class SparseSolver:
-    def __init__(self, dictionary_learning=True, num_learning_iterations=20):
+    def __init__(
+            self,
+            dictionary_learning: bool,
+            num_learning_iterations: int,
+            img: np.ndarray,
+            dictionary: Dictionary,
+            epsilon: float
+    ):
         self.dictionary_learning = dictionary_learning
         self.num_learning_iterations = num_learning_iterations
+        self.img = img
+        self.dictionary = dictionary
+        self.epsilon = epsilon
 
-    def __call__(self, img, dict, sparseland_model):
-        patches = self.create_overlapping_patches(img, sparseland_model["patch_size"])
+    def __call__(self) -> np.ndarray:
+        patches = self.create_overlapping_patches()
+        dic = self.dictionary.get_dictionary()  # Dictionary
 
         if self.dictionary_learning:
-            dict, mean_error, mean_cardinality = self.unitary_dictionary_learning(patches, dict,
-                                                                                  self.num_learning_iterations,
-                                                                                  sparseland_model["epsilon"])
+            dic, mean_error, mean_cardinality = self.unitary_dictionary_learning(
+                patches,
+                dic,
+                self.num_learning_iterations,
+                self.epsilon
+            )
 
-        [est_patches, est_coeffs] = self.batch_thresholding(dict, patches, sparseland_model["epsilon"])
-        reconst_img = self.col2im(est_patches, sparseland_model["patch_size"], img.shape)
+        [est_patches, est_coeffs] = self.batch_thresholding(dic, patches, self.epsilon)
+        reconst_img = self.col2im(est_patches, self.dictionary.patch_size, self.img.shape)
 
         return reconst_img
 
-    def create_overlapping_patches(self, img, patch_size):
-        h, w = img.shape
+    def create_overlapping_patches(self):
+        h, w = self.img.shape
 
         # number of patches in x and y directions
-        x_patch_num = w - patch_size[1] + 1
-        y_patch_num = h - patch_size[0] + 1
+        x_patch_num = w - self.dictionary.patch_size[1] + 1
+        y_patch_num = h - self.dictionary.patch_size[0] + 1
 
         # creating overlapping patches (y_patch_num, x_patch_num, patch_size[1], patch_size[0])
-        patches = view_as_windows(img, patch_size, step=1)
+        patches = view_as_windows(self.img, self.dictionary.patch_size, step=1)
 
         # flattened patches
-        flattened_patches = patches.reshape(x_patch_num * y_patch_num, np.prod(patch_size)).T
+        flattened_patches = patches.reshape(x_patch_num * y_patch_num, np.prod(self.dictionary.patch_size)).T
 
         return flattened_patches
 
-    def batch_thresholding(self, dict, patches, epsilon):
+    def batch_thresholding(self, dic, patches, epsilon):
         # BATCH_THRESHOLDING solves the pursuit problem via the error-constraint thresholding pursuit.
         # It solves the following problem:
         #   min_{alpha_i} \sum_i || alpha_i ||_0
@@ -50,13 +65,13 @@ class SparseSolver:
         # given by  X = DA.
 
         # Get the number of atoms
-        num_atoms = dict.shape[1]
+        num_atoms = dic.shape[1]
 
         # Get the number of patches
         N = patches.shape[1]
 
         # Compute the inner products between the dictionary atoms and the input patches
-        inner_products = np.matmul(dict.T, patches)
+        inner_products = np.matmul(dic.T, patches)
 
         # Compute epsilon**2, which is the square residual error allowed per patch
         epsilon_sq = epsilon ** 2
@@ -96,7 +111,7 @@ class SparseSolver:
         A[mat_inds_to_keep, col_sub_to_keep] = inner_products[mat_inds_to_keep, col_sub_to_keep]
 
         # Reconstruct the patches using 'A' matrix
-        X = np.matmul(dict, A)
+        X = np.matmul(dic, A)
 
         return X, A
 
