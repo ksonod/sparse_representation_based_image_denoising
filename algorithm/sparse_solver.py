@@ -1,7 +1,7 @@
 import numpy as np
-from skimage.util import view_as_windows
 import numpy.matlib
-import compute_stat
+from skimage.util import view_as_windows
+from algorithm import compute_stat
 
 class SparseSolver:
     def __init__(self, dictionary_learning=True, num_learning_iterations=20):

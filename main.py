@@ -1,13 +1,13 @@
 import numpy as np
 import imageio
-from degrading_image_tools import DegradationType, DegradingImage
+from algorithm.degrading_image_tools import DegradationType, DegradingImage
 import matplotlib.pyplot as plt
-from dictionary import Dictionary, DictionaryType
-from sparse_solver import SparseSolver
-from compute_stat import compute_psnr
+from algorithm.dictionary import Dictionary, DictionaryType
+from algorithm.sparse_solver import SparseSolver
+from algorithm.compute_stat import compute_psnr
 
 #################
-image_data_path = "/Users/kotarosonoda/Repository/sparseland_for_image_processing.git/sample_data/barbara.png"
+image_data_path = "./data/sample_image/barbara.png"
 
 config_image_degradation = {
     "image_degradation_type": DegradationType.add_random_noise,
