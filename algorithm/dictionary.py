@@ -3,7 +3,7 @@ from enum import Enum
 
 
 class DictionaryType(Enum):
-    DCT = "dct"
+    DCT = "discrete_cosine_transform"
     # TODO: Add different dictionaries
 
 
@@ -16,22 +16,28 @@ class Dictionary:
         else:
             self.patch_size = patch_size
 
-    def get_dictionary(self) -> np.ndarray:
+        self.defined_dictionary = None
 
-        if self.dictionary_type == DictionaryType.DCT:
-            patch_n = self.patch_size[0]  # patch size
+    def build_dictionary(self):
+        """
+        A dictionary can be built with this method.
 
-            dic = np.zeros(self.patch_size)
+        - DCT: Direct Cosine Transform. In the current implementation, each column (or row) corresponds to a flattened
+         DCT basis.
+        """
+        if self.dictionary_type == DictionaryType.DCT:  #
+            n = self.patch_size[0]
 
-            for k in range(patch_n):
+            temp_dict = np.zeros(self.patch_size)
+
+            for k in range(n):
                 if k > 0:
-                    coeff = 1 / np.sqrt(2 * patch_n)
+                    coeff = 1 / np.sqrt(2 * n)
                 else:  # k==0
-                    coeff = 0.5 / np.sqrt(patch_n)
-                dic[:, k] = 2 * coeff * np.cos((0.5 + np.arange(patch_n)) * k * np.pi / patch_n)
+                    coeff = 0.5 / np.sqrt(n)
+                temp_dict[:, k] = 2 * coeff * np.cos((0.5 + np.arange(n)) * k * np.pi / n)
 
-            # Create the DCT for both axes
-            return np.kron(dic, dic)
+            self.defined_dictionary = np.kron(temp_dict, temp_dict)
         else:
             # TODO: Add different dictionaries
             raise NotImplementedError("Choose a different dictionary")

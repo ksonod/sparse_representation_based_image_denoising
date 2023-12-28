@@ -4,7 +4,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 from algorithm.dictionary import Dictionary, DictionaryType
 from algorithm.sparse_solver import SparseSolver
-from algorithm.compute_stat import compute_psnr
+from algorithm.statistics import calculate_psnr
 from pathlib import Path
 
 
@@ -19,9 +19,10 @@ CONFIG = {
     "sparse_model": {
         "patch_size": (10, 10),  # The patch must be a square
         "initial_dict": DictionaryType.DCT,
-        "dictionary_learning": False,  # False means a predefined dictionary will be used.
-        "num_learning_iterations": 20  # number of learning iterations
-    }
+        "enable_dictionary_learning": True,  # False means a predefined dictionary will be used.
+        "num_learning_iterations": 20,  # number of learning iterations
+        "verbose": True,
+    },
 }
 
 
@@ -36,16 +37,15 @@ def run_scripts(input_file: dict, config: dict):
     img = img[:256, 251:251+256]  # TODO: Remove it because it exists only for test purposes.
     degraded_img = degrade_image(img, config["image_degradation"])
 
-    dictionary = Dictionary(
-        dictionary_type=config["sparse_model"]["initial_dict"], patch_size=config["sparse_model"]["patch_size"]
-    )
-
     sparse_solver = SparseSolver(
-        dictionary_learning=config["sparse_model"]["dictionary_learning"],
+        enable_dictionary_learning=config["sparse_model"]["enable_dictionary_learning"],
         num_learning_iterations=config["sparse_model"]["num_learning_iterations"],
         img=degraded_img,
-        dictionary=dictionary,
-        epsilon=config["sparse_model"]["epsilon"]
+        dictionary=Dictionary(
+            dictionary_type=config["sparse_model"]["initial_dict"], patch_size=config["sparse_model"]["patch_size"]
+        ),
+        epsilon=config["sparse_model"]["epsilon"],
+        verbose=config["sparse_model"]["verbose"]
     )
     reconstructed_img = sparse_solver()
 
@@ -59,12 +59,12 @@ def run_scripts(input_file: dict, config: dict):
     plt.subplot(132)
     plt.imshow(degraded_img, "gray")
     plt.axis("off")
-    plt.title("degraded img. PSNR={:.3f}".format(compute_psnr(img, degraded_img)))
+    plt.title("degraded img. PSNR={:.3f}".format(calculate_psnr(img, degraded_img)))
 
     plt.subplot(133)
     plt.imshow(reconstructed_img, "gray")
     plt.axis("off")
-    plt.title("reconstrucred img. PSNR={:.3f}".format(compute_psnr(img, reconstructed_img)))
+    plt.title("reconstrucred img. PSNR={:.3f}".format(calculate_psnr(img, reconstructed_img)))
 
     plt.show()
 

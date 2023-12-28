@@ -1,8 +1,8 @@
 # About this Repository
-Image denoising with sparse representation [[1](https://link.springer.com/book/10.1007/978-1-4419-7011-4), [2](https://www.edx.org/certificates/professional-certificate/israelx-sparse-representations-from-theory-to-practice)]
+This repository shows an image denoising method based on sparse representation [[1](https://link.springer.com/book/10.1007/978-1-4419-7011-4), [2](https://www.edx.org/certificates/professional-certificate/israelx-sparse-representations-from-theory-to-practice)].  
 
 # How to Use
-1. Open [main.py](https://github.com/ksonod/sparse_representation_based_image_denoising/blob/main/sample/main.py) in `./sample` and specify config dictionaries.
+1. Open [main.py](https://github.com/ksonod/sparse_representation_based_image_denoising/blob/main/sample/main.py) in `./sample` and specify `config` dictionaries.
 2. Run `./sample/main.py`.
 
 # References
