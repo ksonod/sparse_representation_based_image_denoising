@@ -1,25 +1,27 @@
 import numpy as np
-from data.degrade_images import degrade_image
 from PIL import Image
 import matplotlib.pyplot as plt
+from pathlib import Path
+from data.degrade_images import degrade_image, DegradationType
 from algorithm.dictionary import Dictionary, DictionaryType
 from algorithm.sparse_solver import SparseSolver
 from algorithm.statistics import calculate_psnr
-from pathlib import Path
 
 
 INPUT_FILE = {
-    "file_path": Path("./data/sample_image/image.png")
+    "file_path": Path("./data/sample_image/image.png")  # Gray scale image
 }
 
 CONFIG = {
     "image_degradation": {
-        "noise_sigma": 20
+        "noise_sigma": 20,
+        # "random_seed": 41,
+        "degradation_type": DegradationType.NOISE
     },
     "sparse_model": {
         "patch_size": (10, 10),  # The patch must be a square
         "initial_dict": DictionaryType.DCT,
-        "enable_dictionary_learning": True,  # False means a predefined dictionary will be used.
+        "enable_dictionary_learning": False,  # False means a predefined dictionary will be used.
         "num_learning_iterations": 20,  # number of learning iterations
         "verbose": True,
     },
@@ -34,7 +36,6 @@ def run_scripts(input_file: dict, config: dict):
 
     # Load an image
     img = np.array(Image.open(input_file["file_path"]))
-    img = img[:256, 251:251+256]  # TODO: Remove it because it exists only for test purposes.
     degraded_img = degrade_image(img, config["image_degradation"])
 
     sparse_solver = SparseSolver(
@@ -49,7 +50,7 @@ def run_scripts(input_file: dict, config: dict):
     )
     reconstructed_img = sparse_solver()
 
-    # data visualization
+    # Data visualization
     plt.figure(figsize=(14, 4))
     plt.subplot(131)
     plt.imshow(img, "gray")
