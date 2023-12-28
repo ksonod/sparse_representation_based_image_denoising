@@ -1,7 +1,8 @@
 import numpy as np
-from skimage.util import view_as_windows
 from typing import Tuple
-from algorithm import statistics
+import matplotlib.pyplot as plt
+from skimage.util import view_as_windows
+from algorithm.statistics import calculate_statistics
 from algorithm.dictionary import Dictionary
 
 
@@ -33,6 +34,9 @@ class SparseSolver:
                 self.num_learning_iterations,
                 self.epsilon
             )
+
+            if self.verbose:
+                self.show_results_in_dict_learning(mean_error, mean_cardinality)
         else:
             new_dictionary = np.copy(self.dictionary.defined_dictionary)
 
@@ -92,7 +96,6 @@ class SparseSolver:
 
         A = np.zeros((num_atoms, num_patches))
         A[mat_inds_to_keep, col_sub_to_keep] = inner_prod[mat_inds_to_keep, col_sub_to_keep]
-
         X = np.matmul(D, A)  # Reconstruction of restored image patches using dictionary and determined coefficients.
 
         return X, A
@@ -109,20 +112,24 @@ class SparseSolver:
         :return: img: Transformed image M x N.
         """
 
-        numerator_img = np.zeros((img_size[0], img_size[1]))
-        denominator_img = np.zeros((img_size[0], img_size[1]))
+        numerator_img = np.zeros(img_size)
+        denominator_img = np.zeros(img_size)
 
-        for i in range(img_size[0] - img_patch_size[0] + 1):
-            for j in range(img_size[1] - img_patch_size[1] + 1):
-                # rebuild current patch
-                num_of_curr_patch = i * (img_size[1] - img_patch_size[1] + 1) + (j + 1)
-                last_row = i + img_patch_size[0]
-                last_col = j + img_patch_size[1]
-                curr_patch = img_patches[:, num_of_curr_patch - 1]
-                curr_patch = np.reshape(curr_patch, (img_patch_size[0], img_patch_size[1]))
-                numerator_img[i:last_row, j:last_col] = numerator_img[i:last_row, j:last_col] + curr_patch
-                denominator_img[i:last_row, j:last_col] = denominator_img[i:last_row, j:last_col] + \
-                                                          np.ones(curr_patch.shape)
+        for idx_row in range(img_size[0] - img_patch_size[0] + 1):
+            for idx_col in range(img_size[1] - img_patch_size[1] + 1):
+
+                num_of_curr_patch = idx_row * (img_size[1] - img_patch_size[1] + 1) + (idx_col + 1)
+                last_row = idx_row + img_patch_size[0]
+                last_col = idx_col + img_patch_size[1]
+                curr_patch = img_patches[:, num_of_curr_patch - 1].reshape(img_patch_size[0], img_patch_size[1])
+
+                numerator_img[
+                    idx_row:last_row, idx_col:last_col
+                ] = numerator_img[idx_row:last_row, idx_col:last_col] + curr_patch
+                denominator_img[
+                    idx_row:last_row, idx_col:last_col
+                ] = denominator_img[idx_row:last_row, idx_col:last_col] + np.ones(curr_patch.shape)
+
         img = numerator_img / denominator_img
 
         return img
@@ -158,9 +165,20 @@ class SparseSolver:
 
             if self.verbose:
                 print(f"Iteration {i + 1}: ", end=" ")
-            mean_error[i], mean_cardinality[i] = statistics.calculate_statistics(X, Y, A, self.verbose)
+            mean_error[i], mean_cardinality[i] = calculate_statistics(X, Y, A, self.verbose)
 
             [U, _, V] = np.linalg.svd(np.matmul(A, Y.T))
             D = np.matmul(V.T, U.T)
 
         return D, mean_error, mean_cardinality
+
+    @staticmethod
+    def show_results_in_dict_learning(mean_error: np.ndarray, mean_cardinality: np.ndarray):
+        plt.figure()
+        plt.subplot(211)
+        plt.plot(mean_error, "k.-")
+        plt.ylabel("Mean residual error")
+        plt.subplot(212)
+        plt.plot(mean_cardinality, "k.-")
+        plt.ylabel("Mean cardinality")
+        plt.xlabel("Iteration")
