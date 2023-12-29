@@ -14,8 +14,8 @@ INPUT_FILE = {
 
 CONFIG = {
     "image_degradation": {
-        "noise_sigma": 20,
-        # "random_seed": 41,
+        "noise_sigma": 25,
+        "random_seed": 41,
         "degradation_type": DegradationType.NOISE
     },
     "sparse_model": {
@@ -23,6 +23,7 @@ CONFIG = {
         "initial_dict": DictionaryType.DCT,
         "enable_dictionary_learning": False,  # False means a predefined dictionary will be used.
         "num_learning_iterations": 20,  # number of learning iterations
+        # "epsilon": 210,
         "verbose": True,
     },
 }
@@ -38,34 +39,39 @@ def run_scripts(input_file: dict, config: dict):
     img = np.array(Image.open(input_file["file_path"]))
     degraded_img = degrade_image(img, config["image_degradation"])
 
+    dictionary = Dictionary(
+        dictionary_type=config["sparse_model"]["initial_dict"], patch_size=config["sparse_model"]["patch_size"]
+    )
+
     sparse_solver = SparseSolver(
         enable_dictionary_learning=config["sparse_model"]["enable_dictionary_learning"],
         num_learning_iterations=config["sparse_model"]["num_learning_iterations"],
         img=degraded_img,
-        dictionary=Dictionary(
-            dictionary_type=config["sparse_model"]["initial_dict"], patch_size=config["sparse_model"]["patch_size"]
-        ),
+        dictionary=dictionary,
         epsilon=config["sparse_model"]["epsilon"],
         verbose=config["sparse_model"]["verbose"]
     )
     reconstructed_img = sparse_solver()
+
+    if config["sparse_model"]["verbose"]:
+        dictionary.show_dictionary()
 
     # Data visualization
     plt.figure(figsize=(14, 4))
     plt.subplot(131)
     plt.imshow(img, "gray")
     plt.axis("off")
-    plt.title("Original")
+    plt.title("Original image")
 
     plt.subplot(132)
     plt.imshow(degraded_img, "gray")
     plt.axis("off")
-    plt.title("degraded img. PSNR={:.3f}".format(calculate_psnr(img, degraded_img)))
+    plt.title("Degraded image PSNR={:.3f}".format(calculate_psnr(img, degraded_img)))
 
     plt.subplot(133)
     plt.imshow(reconstructed_img, "gray")
     plt.axis("off")
-    plt.title("reconstrucred img. PSNR={:.3f}".format(calculate_psnr(img, reconstructed_img)))
+    plt.title("Reconstrucred image. PSNR={:.3f}".format(calculate_psnr(img, reconstructed_img)))
 
     plt.show()
 

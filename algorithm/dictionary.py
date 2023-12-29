@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 from enum import Enum
 
 
@@ -17,6 +18,7 @@ class Dictionary:
             self.patch_size = patch_size
 
         self.defined_dictionary = None
+        self.learned_dictionary = None
 
     def build_dictionary(self):
         """
@@ -42,3 +44,32 @@ class Dictionary:
             # TODO: Add different dictionaries
             raise NotImplementedError("Choose a different dictionary")
 
+    def show_dictionary(self):
+        """
+        This function converts each atom stored in a column of a dictionary into a 2D-shape atom for visualization and
+        shows the 2D atoms.
+        """
+
+        def show_dict(input_dictionary: np.ndarray, fig_title: str):
+            dict_idx = 0
+            plt.figure()
+            plt.title(fig_title)
+            plt.tick_params(bottom=False, left=False, labelbottom=False, labelleft=False)
+
+            for idx_row in range(int(input_dictionary.shape[0] / self.patch_size[0])):
+                for idx_col in range(int(input_dictionary.shape[1]/self.patch_size[1])):
+
+                    dict_atom = input_dictionary[:, dict_idx].reshape(self.patch_size)  # reorganized atom
+
+                    plt.subplot(*self.patch_size, dict_idx + 1)
+                    plt.pcolormesh(dict_atom, cmap="gray")
+                    plt.tick_params(bottom=False, left=False, labelbottom=False, labelleft=False)
+
+                    dict_idx += 1
+            plt.subplots_adjust(wspace=0, hspace=0)
+
+        if self.defined_dictionary is not None:
+            show_dict(self.defined_dictionary, "Original dictionary")
+
+        if self.learned_dictionary is not None:
+            show_dict(self.learned_dictionary, "Learned dictionary")

@@ -35,6 +35,7 @@ class SparseSolver:
                 self.epsilon
             )
 
+            self.dictionary.learned_dictionary = np.copy(new_dictionary)
             if self.verbose:
                 self.show_results_in_dict_learning(mean_error, mean_cardinality)
         else:
