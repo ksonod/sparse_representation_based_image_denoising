@@ -22,18 +22,25 @@ CONFIG = {
         "patch_size": (10, 10),  # The patch must be a square
         "initial_dict": DictionaryType.DCT,
         "enable_dictionary_learning": False,  # False means a predefined dictionary will be used.
-        "num_learning_iterations": 20,  # number of learning iterations
+        # "num_learning_iterations": 30,  # number of learning iterations
         # "epsilon": 210,
         "verbose": True,
     },
 }
 
 
-def run_scripts(input_file: dict, config: dict):
-
+def check_config(config: dict):
     if "epsilon" not in config:
         config["sparse_model"]["epsilon"] = \
             np.sqrt(1.1) * config["sparse_model"]["patch_size"][0] * config["image_degradation"]["noise_sigma"]
+
+    if not config["sparse_model"]["enable_dictionary_learning"]:
+        config["sparse_model"]["num_learning_iterations"] = 0
+
+
+def run_scripts(input_file: dict, config: dict):
+
+    check_config(config)
 
     # Load an image
     img = np.array(Image.open(input_file["file_path"]))
